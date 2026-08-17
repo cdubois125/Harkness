@@ -1784,7 +1784,7 @@ export default function App() {
           </div>
 
           <div className="mt-5 text-center" style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 10, color: SLATE, letterSpacing: "0.05em" }}>
-            100 records currently on file · demo environment
+            Real accounts · your information is only visible to signed-in members
           </div>
         </div>
       </div>
