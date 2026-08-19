@@ -1271,7 +1271,7 @@ function DetailRow({ label, value }) {
 
 // ---------- Main App ----------
 export default function App() {
-  const [screen, setScreen] = useState("login"); // login | signup | intro | dashboard | profile
+  const [screen, setScreen] = useState("landing"); // landing | login | signup | intro | dashboard | profile
   const [introFadeOut, setIntroFadeOut] = useState(false);
   const [dashboardTab, setDashboardTab] = useState("directory"); // directory | classyear | matriculation | map | aisearch
   const [selectedCity, setSelectedCity] = useState(null);
@@ -1296,10 +1296,6 @@ export default function App() {
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [signupForm, setSignupForm] = useState({
     firstName: "", lastName: "", email: "", password: "",
-    role: "Alumni", gradYear: "", childStatus: "current", childGrade: "", childGradYear: "",
-    hasSecondChild: false, child2Status: "current", child2Grade: "", child2GradYear: "",
-    neighborhood: "", occupation: "",
-    field: "Finance", subfield: "Private Equity",
   });
   const [profileForm, setProfileForm] = useState(null);
 
@@ -1377,35 +1373,25 @@ export default function App() {
     setAuthError("");
     setAuthLoading(true);
     try {
-      const wantsAlumniField = signupForm.role === "Alumni" || signupForm.role === "Alumni & Parent";
-      const wantsParentField = signupForm.role === "Parent" || signupForm.role === "Alumni & Parent";
-      const children = [];
-      if (wantsParentField) {
-        children.push({
-          name: "—",
-          gradYear: Number(signupForm.childGradYear) || 2015 + Math.floor(Math.random() * 20),
-        });
-        if (signupForm.hasSecondChild) {
-          children.push({
-            name: "—",
-            gradYear: Number(signupForm.child2GradYear) || 2015 + Math.floor(Math.random() * 20),
-          });
-        }
-      }
+      // Signup deliberately asks for almost nothing beyond identity — role,
+      // career info, schools, etc. all get filled in later via My Profile
+      // (which already nudges people to complete it), rather than
+      // front-loading a long form before someone's even seen the site.
+      // "Alumni" is just a starting default; easy to correct afterward.
       const newPersonData = {
         firstName: signupForm.firstName,
         lastName: signupForm.lastName,
-        role: signupForm.role,
-        gradYear: wantsAlumniField ? Number(signupForm.gradYear) || null : null,
-        children,
+        role: "Alumni",
+        gradYear: null,
+        children: [],
         email: signupForm.email,
         phone: "—",
-        city: signupForm.city || "New York",
-        neighborhood: signupForm.neighborhood || "—",
-        occupation: signupForm.occupation || `${signupForm.subfield} Professional`,
-        field: signupForm.field,
-        subfield: CAREER_FIELDS[signupForm.field].includes(signupForm.subfield) ? signupForm.subfield : CAREER_FIELDS[signupForm.field][0],
-        company: "—",
+        city: "New York",
+        neighborhood: "",
+        occupation: "",
+        field: "Finance",
+        subfield: "Private Equity",
+        company: "",
         tier: "Friend",
         joined: new Date().getFullYear(),
         bio: "",
@@ -1499,7 +1485,7 @@ export default function App() {
     setCurrentUser(null);
     setAuthToken(null);
     setPeople([]);
-    setScreen("login");
+    setScreen("landing");
     setLoginForm({ email: "", password: "" });
   }
 
@@ -1710,11 +1696,64 @@ export default function App() {
     );
   }
 
+  // ---------- LANDING ----------
+  if (screen === "landing") {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center p-6" style={{ background: INK_DEEP }}>
+        {fontImports}
+        <div className="w-full max-w-sm text-center">
+          <div className="flex flex-col items-center mb-8">
+            <Crest size={64} />
+            <div className="mt-4">
+              <div style={{ fontFamily: "Cormorant Garamond, serif", color: PARCHMENT, fontSize: 30, letterSpacing: "0.04em" }}>Harkness</div>
+              <div style={{ fontFamily: "IBM Plex Mono, monospace", color: BRASS_LIGHT, fontSize: 11, letterSpacing: "0.2em", marginTop: 4 }}>THE BUCKLEY ALUMNI &amp; FAMILY REGISTRY</div>
+            </div>
+          </div>
+
+          <div style={{ fontFamily: "Source Serif 4, serif", fontSize: 14, color: "#C7CBD6", marginBottom: 28, lineHeight: 1.5 }}>
+            A place for Buckley alumni and parents to find each other — and help each other.
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <button
+              type="button"
+              onClick={() => { setAuthError(""); setScreen("login"); }}
+              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-sm transition-opacity hover:opacity-90"
+              style={{ background: PARCHMENT, color: INK, fontFamily: "IBM Plex Mono, monospace", fontSize: 12, letterSpacing: "0.12em" }}
+            >
+              <LogIn size={14} /> LOG IN
+            </button>
+            <button
+              type="button"
+              onClick={() => { setAuthError(""); setScreen("signup"); }}
+              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-sm transition-opacity hover:opacity-90"
+              style={{ border: `1px solid ${BRASS}`, color: BRASS_LIGHT, fontFamily: "IBM Plex Mono, monospace", fontSize: 12, letterSpacing: "0.12em" }}
+            >
+              <UserPlus size={14} /> FIRST TIME HERE? CREATE YOUR ACCOUNT
+            </button>
+          </div>
+
+          <div className="mt-8 text-center" style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 9, letterSpacing: "0.1em", color: ROYAL_LIGHT }}>
+            NOT AN OFFICIAL BUCKLEY SCHOOL PLATFORM — A COMMUNITY PROJECT
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ---------- LOGIN ----------
   if (screen === "login") {
     return (
       <div className="min-h-screen w-full flex items-center justify-center p-6" style={{ background: INK_DEEP }}>
         {fontImports}
         <div className="w-full max-w-sm">
+          <button
+            onClick={() => { setAuthError(""); setScreen("landing"); }}
+            className="flex items-center gap-1.5 mb-5"
+            style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, color: BRASS_LIGHT, letterSpacing: "0.08em" }}
+          >
+            <ArrowLeft size={13} /> BACK
+          </button>
           <div className="flex flex-col items-center mb-8">
             <Crest size={56} />
             <div className="mt-4 text-center">
@@ -1723,7 +1762,7 @@ export default function App() {
             </div>
           </div>
           <div className="text-center mb-5" style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 9, letterSpacing: "0.1em", color: ROYAL_LIGHT }}>
-            CONCEPT PROTOTYPE — NOT CONNECTED TO OFFICIAL SCHOOL RECORDS
+            NOT AN OFFICIAL BUCKLEY SCHOOL PLATFORM — A COMMUNITY PROJECT
           </div>
 
           <div
@@ -1768,7 +1807,7 @@ export default function App() {
               className="w-full mt-4 flex items-center justify-center gap-2 py-3 rounded-sm transition-opacity hover:opacity-90"
               style={{ background: INK, color: BRASS_LIGHT, fontFamily: "IBM Plex Mono, monospace", fontSize: 12, letterSpacing: "0.12em", opacity: authLoading ? 0.6 : 1 }}
             >
-              <LogIn size={14} /> {authLoading ? "SIGNING IN…" : "SIGN IN"}
+              <LogIn size={14} /> {authLoading ? "LOGGING IN…" : "LOG IN"}
             </button>
 
             <div className="mt-5 pt-5 text-center" style={{ borderTop: `1px solid ${PARCHMENT_DEEP}` }}>
@@ -1834,22 +1873,23 @@ export default function App() {
 
   // ---------- SIGNUP ----------
   if (screen === "signup") {
-    const subOptions = CAREER_FIELDS[signupForm.field] || [];
     return (
       <div className="min-h-screen w-full flex items-center justify-center p-6" style={{ background: INK_DEEP }}>
         {fontImports}
         <div className="w-full max-w-md">
           <button
-            onClick={() => { setAuthError(""); setScreen("login"); }}
+            onClick={() => { setAuthError(""); setScreen("landing"); }}
             className="flex items-center gap-1.5 mb-5"
             style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 11, color: BRASS_LIGHT, letterSpacing: "0.08em" }}
           >
-            <ArrowLeft size={13} /> BACK TO SIGN IN
+            <ArrowLeft size={13} /> BACK
           </button>
 
           <div className="p-8 rounded-sm" style={{ background: PARCHMENT, border: `1px solid ${BRASS}`, boxShadow: "0 20px 60px rgba(0,0,0,0.4)" }}>
             <div style={{ fontFamily: "Cormorant Garamond, serif", fontSize: 24, color: INK, marginBottom: 2 }}>Join the Registry</div>
-            <div style={{ fontFamily: "Source Serif 4, serif", fontSize: 13, color: SLATE, marginBottom: 20 }}>Alumni and parents both welcome.</div>
+            <div style={{ fontFamily: "Source Serif 4, serif", fontSize: 13, color: SLATE, marginBottom: 20 }}>
+              Alumni and parents both welcome. Just the basics for now — you'll fill in the rest once you're in.
+            </div>
 
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
@@ -1866,62 +1906,6 @@ export default function App() {
               <Field label="PASSWORD">
                 <input type="password" value={signupForm.password} onChange={(e) => setSignupForm({ ...signupForm, password: e.target.value })} style={fldStyle} />
               </Field>
-              <Field label="I AM A...">
-                <select value={signupForm.role} onChange={(e) => setSignupForm({ ...signupForm, role: e.target.value })} style={fldStyle}>
-                  <option>Alumni</option>
-                  <option>Parent</option>
-                  <option>Alumni & Parent</option>
-                </select>
-              </Field>
-              {(signupForm.role === "Alumni" || signupForm.role === "Alumni & Parent") && (
-                <Field label="GRADUATION YEAR">
-                  <input value={signupForm.gradYear} onChange={(e) => setSignupForm({ ...signupForm, gradYear: e.target.value })} placeholder="e.g. 2014" style={fldStyle} />
-                </Field>
-              )}
-              {(signupForm.role === "Parent" || signupForm.role === "Alumni & Parent") && (
-                <>
-                  <Field label="SON'S GRADUATION YEAR (ACTUAL OR EXPECTED)">
-                    <input value={signupForm.childGradYear} onChange={(e) => setSignupForm({ ...signupForm, childGradYear: e.target.value })} placeholder="e.g. 2019 or 2029" style={fldStyle} />
-                  </Field>
-                  <label className="flex items-center gap-2" style={{ fontFamily: "Source Serif 4, serif", fontSize: 13, color: SLATE }}>
-                    <input
-                      type="checkbox"
-                      checked={signupForm.hasSecondChild}
-                      onChange={(e) => setSignupForm({ ...signupForm, hasSecondChild: e.target.checked })}
-                    />
-                    I have a second son who attends or attended Buckley
-                  </label>
-                  {signupForm.hasSecondChild && (
-                    <Field label="SECOND SON'S GRADUATION YEAR (ACTUAL OR EXPECTED)">
-                      <input value={signupForm.child2GradYear} onChange={(e) => setSignupForm({ ...signupForm, child2GradYear: e.target.value })} placeholder="e.g. 2022 or 2031" style={fldStyle} />
-                    </Field>
-                  )}
-                </>
-              )}
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="CAREER FIELD">
-                  <select
-                    value={signupForm.field}
-                    onChange={(e) => setSignupForm({ ...signupForm, field: e.target.value, subfield: CAREER_FIELDS[e.target.value][0] })}
-                    style={fldStyle}
-                  >
-                    {FIELD_NAMES.map((f) => <option key={f}>{f}</option>)}
-                  </select>
-                </Field>
-                <Field label="SPECIALTY">
-                  <select value={signupForm.subfield} onChange={(e) => setSignupForm({ ...signupForm, subfield: e.target.value })} style={fldStyle}>
-                    {subOptions.map((s) => <option key={s}>{s}</option>)}
-                  </select>
-                </Field>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="NEIGHBORHOOD">
-                  <input value={signupForm.neighborhood} onChange={(e) => setSignupForm({ ...signupForm, neighborhood: e.target.value })} style={fldStyle} />
-                </Field>
-                <Field label="TITLE">
-                  <input value={signupForm.occupation} onChange={(e) => setSignupForm({ ...signupForm, occupation: e.target.value })} placeholder="e.g. Principal" style={fldStyle} />
-                </Field>
-              </div>
 
               {authError && <div className="text-sm" style={{ color: CRIMSON, fontFamily: "Source Serif 4, serif" }}>{authError}</div>}
 
@@ -2352,7 +2336,7 @@ export default function App() {
             <Crest size={34} />
             <div className="text-left">
               <div style={{ fontFamily: "Cormorant Garamond, serif", color: PARCHMENT, fontSize: 19, letterSpacing: "0.03em" }}>Harkness</div>
-              <div style={{ fontFamily: "IBM Plex Mono, monospace", color: BRASS_LIGHT, fontSize: 9, letterSpacing: "0.18em" }}>THE BUCKLEY ALUMNI &amp; FAMILY REGISTRY · PROTOTYPE</div>
+              <div style={{ fontFamily: "IBM Plex Mono, monospace", color: BRASS_LIGHT, fontSize: 9, letterSpacing: "0.18em" }}>THE BUCKLEY ALUMNI &amp; FAMILY REGISTRY</div>
             </div>
           </button>
           <div className="flex items-center gap-3">
@@ -2368,7 +2352,7 @@ export default function App() {
               <div style={{ fontFamily: "IBM Plex Mono, monospace", color: BRASS_LIGHT, fontSize: 10 }}>{currentUser?.email}</div>
             </div>
             <button
-              onClick={() => { setScreen("login"); setCurrentUser(null); setAuthToken(null); setPeople([]); setLoginForm({ email: "", password: "" }); }}
+              onClick={() => { setScreen("landing"); setCurrentUser(null); setAuthToken(null); setPeople([]); setLoginForm({ email: "", password: "" }); }}
               className="px-3 py-1.5 rounded-sm"
               style={{ border: `1px solid ${BRASS}`, color: BRASS_LIGHT, fontFamily: "IBM Plex Mono, monospace", fontSize: 10, letterSpacing: "0.08em" }}
             >
