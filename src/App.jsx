@@ -1276,7 +1276,9 @@ export default function App() {
   const [dashboardTab, setDashboardTab] = useState("directory"); // directory | classyear | matriculation | map | aisearch
   const [selectedCity, setSelectedCity] = useState(null);
   const [classYearView, setClassYearView] = useState("alumni"); // alumni | parents
+  const [classYearSearch, setClassYearSearch] = useState("");
   const [matriculationView, setMatriculationView] = useState("hs"); // hs | college
+  const [matriculationSearch, setMatriculationSearch] = useState("");
   const [aiQuery, setAiQuery] = useState("");
   const [aiHistory, setAiHistory] = useState([]);
   const [people, setPeople] = useState([]);
@@ -1378,6 +1380,12 @@ export default function App() {
       // (which already nudges people to complete it), rather than
       // front-loading a long form before someone's even seen the site.
       // "Alumni" is just a starting default; easy to correct afterward.
+      // Everything else starts genuinely blank, not a guessed value — an
+      // earlier version defaulted new signups to "Finance / Private
+      // Equity" and "New York," which meant every barely-filled-out new
+      // account looked like a real Private Equity match to search and
+      // showed misleading info in the directory, purely because nobody
+      // had actually said that yet.
       const newPersonData = {
         firstName: signupForm.firstName,
         lastName: signupForm.lastName,
@@ -1386,11 +1394,11 @@ export default function App() {
         children: [],
         email: signupForm.email,
         phone: "—",
-        city: "New York",
+        city: "",
         neighborhood: "",
         occupation: "",
-        field: "Finance",
-        subfield: "Private Equity",
+        field: "",
+        subfield: "",
         company: "",
         tier: "Friend",
         joined: new Date().getFullYear(),
@@ -1425,9 +1433,9 @@ export default function App() {
         firstName: currentUser?.firstName || "", lastName: currentUser?.lastName || "",
         role: "Alumni", gradYear: "", childGradYear: "",
         hasSecondChild: false, child2GradYear: "",
-        email: currentUser?.email || "", phone: "", city: "New York", neighborhood: "",
+        email: currentUser?.email || "", phone: "", city: "", neighborhood: "",
         highSchool: "", college: "",
-        occupation: "", field: "Finance", subfield: "Private Equity",
+        occupation: "", field: "", subfield: "",
         company: "", tier: "Friend", bio: "", helpOffer: "", linkedin: "", instagram: "", twitter: "", visible: true, promoOptIn: false,
       });
     }
@@ -2487,7 +2495,7 @@ export default function App() {
         <div className="flex gap-1 mb-6 flex-wrap" style={{ borderBottom: `1px solid ${PARCHMENT_DEEP}` }}>
           {[
             { key: "directory", label: "Directory", icon: <Search size={13} /> },
-            { key: "classyear", label: "By Class Year", icon: <GraduationCap size={13} /> },
+            { key: "classyear", label: "Class Year", icon: <GraduationCap size={13} /> },
             { key: "matriculation", label: "Matriculation", icon: <GraduationCap size={13} /> },
             { key: "map", label: "Community Map", icon: <MapPin size={13} /> },
             { key: "aisearch", label: "Optimus.AI", icon: <Sparkles size={13} /> },
@@ -2624,7 +2632,7 @@ export default function App() {
               <div className="hidden md:block" style={{ fontFamily: "Source Serif 4, serif", fontSize: 13, color: SLATE }}>{p.highSchool || "—"}</div>
               <div className="hidden md:block" style={{ fontFamily: "Source Serif 4, serif", fontSize: 13, color: SLATE }}>{p.college || "—"}</div>
               <div className="hidden md:block" style={{ fontFamily: "Source Serif 4, serif", fontSize: 13, color: SLATE }}>
-                {p.field}{p.subfield ? ` · ${p.subfield}` : ""}
+                {p.field ? `${p.field}${p.subfield ? " · " + p.subfield : ""}` : "—"}
               </div>
               <div className="hidden md:flex items-center gap-1" style={{ fontFamily: "Source Serif 4, serif", fontSize: 13, color: SLATE }}>
                 <Briefcase size={11} /> {p.occupation}
@@ -2670,14 +2678,30 @@ export default function App() {
               ))}
             </div>
 
+            <div className="flex items-center gap-2 px-3 py-2.5 rounded-sm mb-5" style={{ background: "#fff", border: `1px solid ${PARCHMENT_DEEP}` }}>
+              <Search size={15} color={SLATE} />
+              <input
+                value={classYearSearch}
+                onChange={(e) => setClassYearSearch(e.target.value)}
+                placeholder="Search by class year, e.g. 2015..."
+                className="w-full outline-none bg-transparent"
+                style={{ fontFamily: "Source Serif 4, serif", fontSize: 14, color: INK }}
+              />
+            </div>
+
             {classYearView === "alumni" ? (
               <div className="space-y-6">
-                {alumniByYear.length === 0 ? (
-                  <div className="text-center py-10" style={{ fontFamily: "Source Serif 4, serif", fontSize: 14, color: SLATE }}>
-                    No alumni records to display yet.
-                  </div>
-                ) : (
-                  alumniByYear.map(([year, grads]) => (
+                {(() => {
+                  const q = classYearSearch.trim();
+                  const shown = q ? alumniByYear.filter(([year]) => String(year).includes(q)) : alumniByYear;
+                  if (shown.length === 0) {
+                    return (
+                      <div className="text-center py-10" style={{ fontFamily: "Source Serif 4, serif", fontSize: 14, color: SLATE }}>
+                        {alumniByYear.length === 0 ? "No alumni records to display yet." : "No class years match that search."}
+                      </div>
+                    );
+                  }
+                  return shown.map(([year, grads]) => (
                     <div key={year} className="rounded-sm overflow-hidden" style={{ border: `1px solid ${PARCHMENT_DEEP}`, background: "#fff" }}>
                       <div className="flex items-center justify-between px-5 py-3" style={{ background: INK }}>
                         <span style={{ fontFamily: "Cormorant Garamond, serif", fontSize: 18, color: PARCHMENT }}>Class of {year}</span>
@@ -2701,17 +2725,22 @@ export default function App() {
                         </div>
                       ))}
                     </div>
-                  ))
-                )}
+                  ));
+                })()}
               </div>
             ) : (
               <div className="space-y-6">
-                {parentsOfAlumniByYear.length === 0 ? (
-                  <div className="text-center py-10" style={{ fontFamily: "Source Serif 4, serif", fontSize: 14, color: SLATE }}>
-                    No parents of alumni to display yet.
-                  </div>
-                ) : (
-                  parentsOfAlumniByYear.map(([year, entries]) => (
+                {(() => {
+                  const q = classYearSearch.trim();
+                  const shown = q ? parentsOfAlumniByYear.filter(([year]) => String(year).includes(q)) : parentsOfAlumniByYear;
+                  if (shown.length === 0) {
+                    return (
+                      <div className="text-center py-10" style={{ fontFamily: "Source Serif 4, serif", fontSize: 14, color: SLATE }}>
+                        {parentsOfAlumniByYear.length === 0 ? "No parents of alumni to display yet." : "No class years match that search."}
+                      </div>
+                    );
+                  }
+                  return shown.map(([year, entries]) => (
                     <div key={year} className="rounded-sm overflow-hidden" style={{ border: `1px solid ${PARCHMENT_DEEP}`, background: "#fff" }}>
                       <div className="flex items-center justify-between px-5 py-3" style={{ background: INK }}>
                         <span style={{ fontFamily: "Cormorant Garamond, serif", fontSize: 18, color: PARCHMENT }}>Son's Class of {year}</span>
@@ -2739,8 +2768,8 @@ export default function App() {
                         </div>
                       ))}
                     </div>
-                  ))
-                )}
+                  ));
+                })()}
               </div>
             )}
           </div>
@@ -2872,14 +2901,30 @@ export default function App() {
               ))}
             </div>
 
+            <div className="flex items-center gap-2 px-3 py-2.5 rounded-sm mb-5" style={{ background: "#fff", border: `1px solid ${PARCHMENT_DEEP}` }}>
+              <Search size={15} color={SLATE} />
+              <input
+                value={matriculationSearch}
+                onChange={(e) => setMatriculationSearch(e.target.value)}
+                placeholder="Search by school name..."
+                className="w-full outline-none bg-transparent"
+                style={{ fontFamily: "Source Serif 4, serif", fontSize: 14, color: INK }}
+              />
+            </div>
+
             {matriculationView === "hs" ? (
               <div className="space-y-6">
-                {hsMatriculation.length === 0 ? (
-                  <div className="text-center py-10" style={{ fontFamily: "Source Serif 4, serif", fontSize: 14, color: SLATE }}>
-                    No high school matriculation data to display yet.
-                  </div>
-                ) : (
-                  hsMatriculation.map(([school, alums]) => (
+                {(() => {
+                  const q = matriculationSearch.trim().toLowerCase();
+                  const shown = q ? hsMatriculation.filter(([school]) => school.toLowerCase().includes(q)) : hsMatriculation;
+                  if (shown.length === 0) {
+                    return (
+                      <div className="text-center py-10" style={{ fontFamily: "Source Serif 4, serif", fontSize: 14, color: SLATE }}>
+                        {hsMatriculation.length === 0 ? "No high school matriculation data to display yet." : "No high schools match that search."}
+                      </div>
+                    );
+                  }
+                  return shown.map(([school, alums]) => (
                     <div key={school} className="rounded-sm overflow-hidden" style={{ border: `1px solid ${PARCHMENT_DEEP}`, background: "#fff" }}>
                       <div className="flex items-center justify-between px-5 py-3" style={{ background: INK }}>
                         <span style={{ fontFamily: "Cormorant Garamond, serif", fontSize: 18, color: PARCHMENT }}>{school}</span>
@@ -2905,17 +2950,22 @@ export default function App() {
                         </div>
                       ))}
                     </div>
-                  ))
-                )}
+                  ));
+                })()}
               </div>
             ) : (
               <div className="space-y-6">
-                {collegeMatriculation.length === 0 ? (
-                  <div className="text-center py-10" style={{ fontFamily: "Source Serif 4, serif", fontSize: 14, color: SLATE }}>
-                    No college matriculation data to display yet.
-                  </div>
-                ) : (
-                  collegeMatriculation.map(([college, alums]) => (
+                {(() => {
+                  const q = matriculationSearch.trim().toLowerCase();
+                  const shown = q ? collegeMatriculation.filter(([college]) => college.toLowerCase().includes(q)) : collegeMatriculation;
+                  if (shown.length === 0) {
+                    return (
+                      <div className="text-center py-10" style={{ fontFamily: "Source Serif 4, serif", fontSize: 14, color: SLATE }}>
+                        {collegeMatriculation.length === 0 ? "No college matriculation data to display yet." : "No colleges match that search."}
+                      </div>
+                    );
+                  }
+                  return shown.map(([college, alums]) => (
                     <div key={college} className="rounded-sm overflow-hidden" style={{ border: `1px solid ${PARCHMENT_DEEP}`, background: "#fff" }}>
                       <div className="flex items-center justify-between px-5 py-3" style={{ background: INK }}>
                         <span style={{ fontFamily: "Cormorant Garamond, serif", fontSize: 18, color: PARCHMENT }}>{college}</span>
@@ -2941,8 +2991,8 @@ export default function App() {
                         </div>
                       ))}
                     </div>
-                  ))
-                )}
+                  ));
+                })()}
               </div>
             )}
           </div>
@@ -3106,7 +3156,7 @@ export default function App() {
               <DetailRow label="Neighborhood" value={selected.neighborhood} />
               {selected.highSchool && <DetailRow label="High School" value={selected.highSchool} />}
               {selected.college && <DetailRow label="College" value={selected.college} />}
-              <DetailRow label="Career Field" value={`${selected.field}${selected.subfield ? " · " + selected.subfield : ""}`} />
+              <DetailRow label="Career Field" value={selected.field ? `${selected.field}${selected.subfield ? " · " + selected.subfield : ""}` : "—"} />
               <DetailRow label="Occupation" value={selected.occupation} />
               <DetailRow label="Employer" value={selected.company} />
               {(selected.linkedin || selected.instagram || selected.twitter || (selected.otherSocialPlatform && selected.otherSocialHandle)) && (
