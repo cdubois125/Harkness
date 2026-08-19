@@ -176,6 +176,7 @@ const CAREER_FIELDS = {
   "Marketing & Advertising": ["Brand Strategy", "Digital Marketing", "Public Relations", "Creative Direction"],
   "Transportation & Logistics": ["Aviation", "Maritime", "Supply Chain", "Automotive"],
   "Agriculture & Food": ["Farming & Agribusiness", "Food & Beverage", "Winemaking"],
+  "Other": ["Other"],
 };
 const FIELD_NAMES = Object.keys(CAREER_FIELDS);
 
@@ -446,6 +447,35 @@ function tokenize(str) {
     .split(/\s+/)
     .filter((w) => w.length > 2 && !SEARCH_STOPWORDS.has(w));
 }
+// Edit distance between two words, counting an adjacent-letter swap (the
+// single most common typo — "Grotno" for "Groton") as one edit rather than
+// two, the way plain Levenshtein distance would.
+function editDistance(a, b) {
+  const m = a.length, n = b.length;
+  const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+        dp[i][j] = Math.min(dp[i][j], dp[i - 2][j - 2] + 1);
+      }
+    }
+  }
+  return dp[m][n];
+}
+// True if two words are the same, one contains the other, or they're close
+// enough to plausibly be a typo of each other. Short words (3 letters)
+// require an exact/substring match — fuzzy-matching very short words
+// produces too many false positives ("law" vs "raw") to be worth it.
+function wordsMatch(a, b) {
+  if (a === b || a.includes(b) || b.includes(a)) return true;
+  const minLen = Math.min(a.length, b.length);
+  const allowedTypos = minLen <= 3 ? 0 : minLen <= 6 ? 1 : 2;
+  return allowedTypos > 0 && editDistance(a, b) <= allowedTypos;
+}
 function searchMembers(query, people, excludeId) {
   const queryTokens = [...new Set(tokenize(query))];
   if (queryTokens.length === 0) return [];
@@ -470,7 +500,7 @@ function searchMembers(query, people, excludeId) {
     queryTokens.forEach((qt) => {
       fields.forEach((f) => {
         const fieldTokens = tokenize(f.text);
-        const hit = fieldTokens.some((ft) => ft === qt || ft.includes(qt) || qt.includes(ft));
+        const hit = fieldTokens.some((ft) => wordsMatch(ft, qt));
         if (hit) {
           score += f.weight;
           matchedLabels.add(f.label);
@@ -2561,7 +2591,7 @@ export default function App() {
               className="flex-1"
               style={{ ...fldStyle, fontFamily: "IBM Plex Mono, monospace", fontSize: 12, padding: "8px 10px", border: `1px solid ${fieldFilter !== "All" ? ROYAL : PARCHMENT_DEEP}`, color: fieldFilter !== "All" ? ROYAL : INK }}
             >
-              <option value="All">All Career Fields</option>
+              <option value="All">Career Field</option>
               {FIELD_NAMES.map((f) => <option key={f} value={f}>{f}</option>)}
             </select>
             {fieldFilter !== "All" && (
