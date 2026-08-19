@@ -3,16 +3,24 @@ import * as THREE from "three";
 import { Search, LogIn, UserPlus, GraduationCap, Users, MapPin, Briefcase, X, ChevronRight, Shield, Mail, Lock, ArrowLeft, UserCircle, Save, Check, Heart, ExternalLink, Linkedin, Instagram, Twitter, HeartHandshake, Link2, Sparkles, SendHorizontal } from "lucide-react";
 
 // ---------- Design tokens ----------
-const INK = "#1B2A41";
-const INK_DEEP = "#101B2D";
-const PARCHMENT = "#F3EEE2";
-const PARCHMENT_DEEP = "#EAE2D0";
-const BRASS = "#AD8A4E";
-const BRASS_LIGHT = "#C9A968";
-const CRIMSON = "#6E1F2B";
-const ROYAL = "#2541B2";
-const ROYAL_LIGHT = "#4A63D6";
-const SLATE = "#5C6B73";
+// ---------- Design tokens ----------
+// A Hamptons waterfront material palette: sun-bleached linen, deep harbor
+// water at dusk, unlacquered brass hardware, sea glass, driftwood, and
+// bordeaux. Every name below is used identically everywhere in the app —
+// only the values changed, so this one block reskins the whole site.
+const INK = "#1E3D4A";        // deep harbor teal-navy, not corporate black-navy
+const INK_DEEP = "#132A34";   // harbor water at dusk — still dark enough for light text on top
+const PARCHMENT = "#FAF6EE";  // sun-bleached linen, warmer and brighter than old parchment
+const PARCHMENT_DEEP = "#EDE3D0"; // soft dune sand for dividers
+const BRASS = "#AE8B54";      // unlacquered brass hardware
+const BRASS_LIGHT = "#D6B87E"; // brass catching afternoon light
+const CRIMSON = "#7A2233";    // deep bordeaux, not terracotta
+const ROYAL = "#3E7E82";      // sea glass — the boldest single change from the old corporate blue
+const ROYAL_LIGHT = "#6FAAAB"; // sea glass in shallow water
+const SLATE = "#7C7266";      // warm driftwood, not cool stone gray
+// A soft, warm-toned shadow — natural light through linen, not a cold
+// corporate drop-shadow. Used on the major surfaces throughout.
+const SOFT_SHADOW = "0 12px 40px rgba(60, 46, 24, 0.10), 0 2px 8px rgba(60, 46, 24, 0.06)";
 
 // ---------- Career taxonomy ----------
 // ---------- Supabase backend ----------
@@ -1283,7 +1291,7 @@ function Globe3D({ cityPoints, maxCount, selectedCity, onSelectCity }) {
 
 function StatCard({ icon, label, value }) {
   return (
-    <div className="p-4 rounded-sm" style={{ background: "#fff", border: `1px solid ${PARCHMENT_DEEP}` }}>
+    <div className="p-4 rounded-xl transition-transform hover:-translate-y-0.5" style={{ background: "#fff", border: `1px solid ${PARCHMENT_DEEP}`, boxShadow: SOFT_SHADOW }}>
       <div className="flex items-center gap-2 mb-2" style={{ color: BRASS }}>{icon}<span style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 10, letterSpacing: "0.08em", color: SLATE }}>{label.toUpperCase()}</span></div>
       <div style={{ fontFamily: "Cormorant Garamond, serif", fontSize: 30, color: INK }}>{value}</div>
     </div>
@@ -1737,7 +1745,7 @@ export default function App() {
   // ---------- LANDING ----------
   if (screen === "landing") {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center p-6" style={{ background: INK_DEEP }}>
+      <div className="min-h-screen w-full flex items-center justify-center p-6" style={{ background: `linear-gradient(165deg, ${INK} 0%, ${INK_DEEP} 55%, ${ROYAL} 150%)` }}>
         {fontImports}
         <div className="w-full max-w-sm text-center">
           <div className="flex flex-col items-center mb-8">
@@ -1804,8 +1812,8 @@ export default function App() {
           </div>
 
           <div
-            className="p-8 rounded-sm"
-            style={{ background: PARCHMENT, border: `1px solid ${BRASS}`, boxShadow: "0 20px 60px rgba(0,0,0,0.4)" }}
+            className="p-8 rounded-2xl"
+            style={{ background: PARCHMENT, border: `1px solid ${BRASS}`, boxShadow: SOFT_SHADOW }}
           >
             <div className="mb-5">
               <label className="block mb-1.5" style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 10, letterSpacing: "0.1em", color: SLATE }}>EMAIL</label>
@@ -1923,7 +1931,7 @@ export default function App() {
             <ArrowLeft size={13} /> BACK
           </button>
 
-          <div className="p-8 rounded-sm" style={{ background: PARCHMENT, border: `1px solid ${BRASS}`, boxShadow: "0 20px 60px rgba(0,0,0,0.4)" }}>
+          <div className="p-8 rounded-2xl" style={{ background: PARCHMENT, border: `1px solid ${BRASS}`, boxShadow: SOFT_SHADOW }}>
             <div style={{ fontFamily: "Cormorant Garamond, serif", fontSize: 24, color: INK, marginBottom: 2 }}>Join the Registry</div>
             <div style={{ fontFamily: "Source Serif 4, serif", fontSize: 13, color: SLATE, marginBottom: 20 }}>
               Alumni and parents both welcome. Just the basics for now — you'll fill in the rest once you're in.
@@ -1986,7 +1994,7 @@ export default function App() {
             This information appears in the directory that other alumni and parents can search. Fields marked optional can be left blank.
           </div>
 
-          <div className="p-8 rounded-sm space-y-4" style={{ background: "#fff", border: `1px solid ${PARCHMENT_DEEP}` }}>
+          <div className="p-8 rounded-2xl space-y-4" style={{ background: "#fff", border: `1px solid ${PARCHMENT_DEEP}`, boxShadow: SOFT_SHADOW }}>
             <div className="grid grid-cols-2 gap-4">
               <Field label="FIRST NAME"><input value={profileForm.firstName} onChange={(e) => setProfileForm({ ...profileForm, firstName: e.target.value })} style={fldStyle} /></Field>
               <Field label="LAST NAME"><input value={profileForm.lastName} onChange={(e) => setProfileForm({ ...profileForm, lastName: e.target.value })} style={fldStyle} /></Field>
@@ -2412,8 +2420,8 @@ export default function App() {
         {/* Complete your profile nudge */}
         {profileCompleteness && profileCompleteness.percent < 100 && (
           <div
-            className="flex items-center gap-4 rounded-sm mb-6 px-5 py-4"
-            style={{ background: "#fff", border: `1px solid ${PARCHMENT_DEEP}`, borderLeft: `3px solid ${ROYAL}` }}
+            className="flex items-center gap-4 rounded-xl mb-6 px-5 py-4"
+            style={{ background: "#fff", border: `1px solid ${PARCHMENT_DEEP}`, borderLeft: `3px solid ${ROYAL}`, boxShadow: SOFT_SHADOW }}
           >
             <div className="flex-1">
               <div className="flex items-center justify-between mb-1.5">
@@ -2451,8 +2459,12 @@ export default function App() {
 
         {/* Mission */}
         <div
-          className="relative overflow-hidden rounded-sm mb-8 px-8 py-9 text-center"
-          style={{ background: INK_DEEP, border: `1px solid ${BRASS}`, boxShadow: `0 1px 0 ${ROYAL}` }}
+          className="relative overflow-hidden rounded-2xl mb-8 px-8 py-9 text-center"
+          style={{
+            background: `linear-gradient(165deg, ${INK} 0%, ${INK_DEEP} 55%, ${ROYAL} 145%)`,
+            border: `1px solid ${BRASS}`,
+            boxShadow: SOFT_SHADOW,
+          }}
         >
           <div className="flex justify-center mb-4">
             <Crest size={30} />
@@ -2623,7 +2635,7 @@ export default function App() {
           const gridCols = cols.join(" ");
           const gridGap = "0 20px";
           return (
-        <div className="rounded-sm overflow-hidden" style={{ border: `1px solid ${PARCHMENT_DEEP}`, background: "#fff", overflowX: "auto" }}>
+        <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${PARCHMENT_DEEP}`, background: "#fff", overflowX: "auto", boxShadow: SOFT_SHADOW }}>
           <div className="hidden md:grid items-end" style={{ gridTemplateColumns: gridCols, gap: gridGap, padding: "10px 16px", background: PARCHMENT_DEEP, fontFamily: "IBM Plex Mono, monospace", fontSize: 10, letterSpacing: "0.08em", color: SLATE, minWidth: 1450 }}>
             <div>NAME</div><div>ROLE</div><div>LOCATION</div>
             {showGradYear && <div>GRADUATION<br />YEAR</div>}
@@ -2732,7 +2744,7 @@ export default function App() {
                     );
                   }
                   return shown.map(([year, grads]) => (
-                    <div key={year} className="rounded-sm overflow-hidden" style={{ border: `1px solid ${PARCHMENT_DEEP}`, background: "#fff" }}>
+                    <div key={year} className="rounded-xl overflow-hidden" style={{ border: `1px solid ${PARCHMENT_DEEP}`, background: "#fff", boxShadow: SOFT_SHADOW }}>
                       <div className="flex items-center justify-between px-5 py-3" style={{ background: INK }}>
                         <span style={{ fontFamily: "Cormorant Garamond, serif", fontSize: 18, color: PARCHMENT }}>Class of {year}</span>
                         <span style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 10, letterSpacing: "0.08em", color: BRASS_LIGHT }}>
@@ -2771,7 +2783,7 @@ export default function App() {
                     );
                   }
                   return shown.map(([year, entries]) => (
-                    <div key={year} className="rounded-sm overflow-hidden" style={{ border: `1px solid ${PARCHMENT_DEEP}`, background: "#fff" }}>
+                    <div key={year} className="rounded-xl overflow-hidden" style={{ border: `1px solid ${PARCHMENT_DEEP}`, background: "#fff", boxShadow: SOFT_SHADOW }}>
                       <div className="flex items-center justify-between px-5 py-3" style={{ background: INK }}>
                         <span style={{ fontFamily: "Cormorant Garamond, serif", fontSize: 18, color: PARCHMENT }}>Son's Class of {year}</span>
                         <span style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 10, letterSpacing: "0.08em", color: BRASS_LIGHT }}>
@@ -2830,7 +2842,7 @@ export default function App() {
                 />
               </div>
 
-              <div className="rounded-sm overflow-hidden mb-6" style={{ border: `1px solid ${BRASS}`, background: INK_DEEP }}>
+              <div className="rounded-xl overflow-hidden mb-6" style={{ border: `1px solid ${BRASS}`, background: INK_DEEP, boxShadow: SOFT_SHADOW }}>
                 <Globe3D
                   cityPoints={cityPoints}
                   maxCount={maxCityCount}
@@ -2841,7 +2853,7 @@ export default function App() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* City ranking — also works as a click target, since pins can be small */}
-                <div className="rounded-sm overflow-hidden" style={{ border: `1px solid ${PARCHMENT_DEEP}`, background: "#fff" }}>
+                <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${PARCHMENT_DEEP}`, background: "#fff", boxShadow: SOFT_SHADOW }}>
                   <div className="px-5 py-3" style={{ background: INK }}>
                     <span style={{ fontFamily: "Cormorant Garamond, serif", fontSize: 16, color: PARCHMENT }}>Cities, by Buckley Presence</span>
                   </div>
@@ -2867,7 +2879,7 @@ export default function App() {
                 </div>
 
                 {/* Selected city's members */}
-                <div className="rounded-sm overflow-hidden" style={{ border: `1px solid ${PARCHMENT_DEEP}`, background: "#fff" }}>
+                <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${PARCHMENT_DEEP}`, background: "#fff", boxShadow: SOFT_SHADOW }}>
                   <div className="flex items-center justify-between px-5 py-3" style={{ background: INK }}>
                     <span style={{ fontFamily: "Cormorant Garamond, serif", fontSize: 16, color: PARCHMENT }}>
                       {activeCity ? activeCity.city : "Select a city"}
@@ -2955,7 +2967,7 @@ export default function App() {
                     );
                   }
                   return shown.map(([school, alums]) => (
-                    <div key={school} className="rounded-sm overflow-hidden" style={{ border: `1px solid ${PARCHMENT_DEEP}`, background: "#fff" }}>
+                    <div key={school} className="rounded-xl overflow-hidden" style={{ border: `1px solid ${PARCHMENT_DEEP}`, background: "#fff", boxShadow: SOFT_SHADOW }}>
                       <div className="flex items-center justify-between px-5 py-3" style={{ background: INK }}>
                         <span style={{ fontFamily: "Cormorant Garamond, serif", fontSize: 18, color: PARCHMENT }}>{school}</span>
                         <span style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 10, letterSpacing: "0.08em", color: BRASS_LIGHT }}>
@@ -2996,7 +3008,7 @@ export default function App() {
                     );
                   }
                   return shown.map(([college, alums]) => (
-                    <div key={college} className="rounded-sm overflow-hidden" style={{ border: `1px solid ${PARCHMENT_DEEP}`, background: "#fff" }}>
+                    <div key={college} className="rounded-xl overflow-hidden" style={{ border: `1px solid ${PARCHMENT_DEEP}`, background: "#fff", boxShadow: SOFT_SHADOW }}>
                       <div className="flex items-center justify-between px-5 py-3" style={{ background: INK }}>
                         <span style={{ fontFamily: "Cormorant Garamond, serif", fontSize: 18, color: PARCHMENT }}>{college}</span>
                         <span style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 10, letterSpacing: "0.08em", color: BRASS_LIGHT }}>
@@ -3042,8 +3054,8 @@ export default function App() {
             </div>
 
             <div
-              className="rounded-sm overflow-hidden mb-4"
-              style={{ border: `1px solid ${PARCHMENT_DEEP}`, background: "#fff", minHeight: 220, maxHeight: 520, overflowY: "auto" }}
+              className="rounded-xl overflow-hidden mb-4"
+              style={{ border: `1px solid ${PARCHMENT_DEEP}`, background: "#fff", minHeight: 220, maxHeight: 520, overflowY: "auto", boxShadow: SOFT_SHADOW }}
             >
               {aiHistory.length === 0 ? (
                 <div className="flex flex-col items-center justify-center text-center px-8" style={{ minHeight: 220 }}>
@@ -3153,7 +3165,7 @@ export default function App() {
       {/* Detail modal */}
       {selected && (
         <div className="fixed inset-0 flex items-center justify-center p-6 z-50" style={{ background: "rgba(16,27,45,0.6)" }} onClick={() => setSelected(null)}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-sm overflow-hidden" style={{ background: PARCHMENT, border: `1px solid ${BRASS}` }}>
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl overflow-hidden" style={{ background: PARCHMENT, border: `1px solid ${BRASS}`, boxShadow: "0 25px 70px rgba(19, 42, 52, 0.45)" }}>
             <div className="flex items-center justify-between px-6 py-4" style={{ background: INK_DEEP }}>
               <div className="flex items-center gap-3">
                 <Initials first={selected.firstName} last={selected.lastName} />
