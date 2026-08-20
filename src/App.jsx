@@ -8,8 +8,8 @@ import { Search, LogIn, UserPlus, GraduationCap, Users, MapPin, Briefcase, X, Ch
 // water at dusk, unlacquered brass hardware, sea glass, driftwood, and
 // bordeaux. Every name below is used identically everywhere in the app —
 // only the values changed, so this one block reskins the whole site.
-const INK = "#1E3D4A";        // deep harbor teal-navy, not corporate black-navy
-const INK_DEEP = "#132A34";   // harbor water at dusk — still dark enough for light text on top
+const INK = "#12397A";        // Buckley Blue, lightened — same verified hue, for buttons/secondary surfaces
+const INK_DEEP = "#0A2045";   // the real Buckley Blue — pixel-sampled directly from their own crest
 const PARCHMENT = "#FAF6EE";  // sun-bleached linen, warmer and brighter than old parchment
 const PARCHMENT_DEEP = "#EDE3D0"; // soft dune sand for dividers
 const BRASS = "#AE8B54";      // unlacquered brass hardware
@@ -21,6 +21,15 @@ const SLATE = "#7C7266";      // warm driftwood, not cool stone gray
 // A soft, warm-toned shadow — natural light through linen, not a cold
 // corporate drop-shadow. Used on the major surfaces throughout.
 const SOFT_SHADOW = "0 12px 40px rgba(60, 46, 24, 0.10), 0 2px 8px rgba(60, 46, 24, 0.06)";
+// Glass + glow layer: frosted translucent panels and soft ambient light,
+// using the same harbor/brass/sea-glass palette rather than generic neon —
+// the "futuristic" quality comes from material and motion, not color shock.
+const GLASS_LIGHT = "rgba(250, 246, 238, 0.72)";  // frosted linen glass, for panels over dark/gradient surfaces
+const GLASS_DARK = "rgba(19, 42, 52, 0.55)";      // frosted harbor glass, for panels over light surfaces
+const GLASS_BORDER = "rgba(214, 184, 126, 0.35)"; // soft glowing brass edge
+const GLOW_BRASS = "0 0 32px rgba(214, 184, 126, 0.35), 0 0 1px rgba(214, 184, 126, 0.8)";
+const GLOW_SEAGLASS = "0 0 40px rgba(111, 170, 171, 0.35), 0 0 1px rgba(111, 170, 171, 0.8)";
+const GLASS_BLUR = "blur(20px) saturate(160%)";
 
 // ---------- Career taxonomy ----------
 // ---------- Supabase backend ----------
@@ -1745,38 +1754,64 @@ export default function App() {
   // ---------- LANDING ----------
   if (screen === "landing") {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center p-6" style={{ background: `linear-gradient(165deg, ${INK} 0%, ${INK_DEEP} 55%, ${ROYAL} 150%)` }}>
+      <div className="min-h-screen w-full flex items-center justify-center p-6 relative overflow-hidden" style={{ background: `linear-gradient(165deg, ${INK} 0%, ${INK_DEEP} 55%, ${ROYAL} 150%)` }}>
         {fontImports}
-        <div className="w-full max-w-sm text-center">
+        {/* Ambient glow — soft bioluminescence behind the crest, not a hard neon burst */}
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            top: "18%",
+            left: "50%",
+            width: 420,
+            height: 420,
+            transform: "translateX(-50%)",
+            background: `radial-gradient(circle, ${BRASS_LIGHT}55 0%, transparent 70%)`,
+            filter: "blur(40px)",
+          }}
+        />
+        <div className="w-full max-w-sm text-center relative">
           <div className="flex flex-col items-center mb-8">
-            <Crest size={64} />
+            <div style={{ filter: `drop-shadow(${GLOW_BRASS})` }}>
+              <Crest size={64} />
+            </div>
             <div className="mt-4">
               <div style={{ fontFamily: "Cormorant Garamond, serif", color: PARCHMENT, fontSize: 30, letterSpacing: "0.04em" }}>Harkness</div>
               <div style={{ fontFamily: "IBM Plex Mono, monospace", color: BRASS_LIGHT, fontSize: 11, letterSpacing: "0.2em", marginTop: 4 }}>THE BUCKLEY ALUMNI &amp; FAMILY REGISTRY</div>
             </div>
           </div>
 
-          <div style={{ fontFamily: "Source Serif 4, serif", fontSize: 14, color: "#C7CBD6", marginBottom: 28, lineHeight: 1.5 }}>
+          <div style={{ fontFamily: "Source Serif 4, serif", fontSize: 14, color: "#C7CBD6", marginBottom: 24, lineHeight: 1.5 }}>
             A place for Buckley alumni and parents to find each other — and help each other.
           </div>
 
-          <div className="flex flex-col gap-3">
-            <button
-              type="button"
-              onClick={() => { setAuthError(""); setScreen("login"); }}
-              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-sm transition-opacity hover:opacity-90"
-              style={{ background: PARCHMENT, color: INK, fontFamily: "IBM Plex Mono, monospace", fontSize: 12, letterSpacing: "0.12em" }}
-            >
-              <LogIn size={14} /> LOG IN
-            </button>
-            <button
-              type="button"
-              onClick={() => { setAuthError(""); setScreen("signup"); }}
-              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-sm transition-opacity hover:opacity-90"
-              style={{ border: `1px solid ${BRASS}`, color: BRASS_LIGHT, fontFamily: "IBM Plex Mono, monospace", fontSize: 12, letterSpacing: "0.12em" }}
-            >
-              <UserPlus size={14} /> FIRST TIME HERE? CREATE YOUR ACCOUNT
-            </button>
+          <div
+            className="p-5 rounded-2xl"
+            style={{
+              background: GLASS_LIGHT,
+              backdropFilter: GLASS_BLUR,
+              WebkitBackdropFilter: GLASS_BLUR,
+              border: `1px solid ${GLASS_BORDER}`,
+              boxShadow: SOFT_SHADOW,
+            }}
+          >
+            <div className="flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={() => { setAuthError(""); setScreen("login"); }}
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl transition-all hover:-translate-y-0.5"
+                style={{ background: INK, color: PARCHMENT, fontFamily: "IBM Plex Mono, monospace", fontSize: 12, letterSpacing: "0.12em", boxShadow: GLOW_SEAGLASS }}
+              >
+                <LogIn size={14} /> LOG IN
+              </button>
+              <button
+                type="button"
+                onClick={() => { setAuthError(""); setScreen("signup"); }}
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl transition-all hover:-translate-y-0.5"
+                style={{ background: "#fff", border: `1px solid ${BRASS}`, color: INK, fontFamily: "IBM Plex Mono, monospace", fontSize: 12, letterSpacing: "0.12em" }}
+              >
+                <UserPlus size={14} /> FIRST TIME HERE? CREATE YOUR ACCOUNT
+              </button>
+            </div>
           </div>
 
           <div className="mt-8 text-center" style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 9, letterSpacing: "0.1em", color: ROYAL_LIGHT }}>
@@ -1790,7 +1825,7 @@ export default function App() {
   // ---------- LOGIN ----------
   if (screen === "login") {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center p-6" style={{ background: INK_DEEP }}>
+      <div className="min-h-screen w-full flex items-center justify-center p-6" style={{ background: `linear-gradient(165deg, ${INK} 0%, ${INK_DEEP} 55%, ${ROYAL} 150%)` }}>
         {fontImports}
         <div className="w-full max-w-sm">
           <button
@@ -1801,7 +1836,9 @@ export default function App() {
             <ArrowLeft size={13} /> BACK
           </button>
           <div className="flex flex-col items-center mb-8">
-            <Crest size={56} />
+            <div style={{ filter: `drop-shadow(${GLOW_BRASS})` }}>
+              <Crest size={56} />
+            </div>
             <div className="mt-4 text-center">
               <div style={{ fontFamily: "Cormorant Garamond, serif", color: PARCHMENT, fontSize: 26, letterSpacing: "0.04em" }}>Harkness</div>
               <div style={{ fontFamily: "IBM Plex Mono, monospace", color: BRASS_LIGHT, fontSize: 11, letterSpacing: "0.2em", marginTop: 4 }}>THE BUCKLEY ALUMNI &amp; FAMILY REGISTRY</div>
@@ -1813,7 +1850,7 @@ export default function App() {
 
           <div
             className="p-8 rounded-2xl"
-            style={{ background: PARCHMENT, border: `1px solid ${BRASS}`, boxShadow: SOFT_SHADOW }}
+            style={{ background: GLASS_LIGHT, backdropFilter: GLASS_BLUR, WebkitBackdropFilter: GLASS_BLUR, border: `1px solid ${GLASS_BORDER}`, boxShadow: SOFT_SHADOW }}
           >
             <div className="mb-5">
               <label className="block mb-1.5" style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 10, letterSpacing: "0.1em", color: SLATE }}>EMAIL</label>
@@ -1920,7 +1957,7 @@ export default function App() {
   // ---------- SIGNUP ----------
   if (screen === "signup") {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center p-6" style={{ background: INK_DEEP }}>
+      <div className="min-h-screen w-full flex items-center justify-center p-6" style={{ background: `linear-gradient(165deg, ${INK} 0%, ${INK_DEEP} 55%, ${ROYAL} 150%)` }}>
         {fontImports}
         <div className="w-full max-w-md">
           <button
@@ -1931,7 +1968,7 @@ export default function App() {
             <ArrowLeft size={13} /> BACK
           </button>
 
-          <div className="p-8 rounded-2xl" style={{ background: PARCHMENT, border: `1px solid ${BRASS}`, boxShadow: SOFT_SHADOW }}>
+          <div className="p-8 rounded-2xl" style={{ background: GLASS_LIGHT, backdropFilter: GLASS_BLUR, WebkitBackdropFilter: GLASS_BLUR, border: `1px solid ${GLASS_BORDER}`, boxShadow: SOFT_SHADOW }}>
             <div style={{ fontFamily: "Cormorant Garamond, serif", fontSize: 24, color: INK, marginBottom: 2 }}>Join the Registry</div>
             <div style={{ fontFamily: "Source Serif 4, serif", fontSize: 13, color: SLATE, marginBottom: 20 }}>
               Alumni and parents both welcome. Just the basics for now — you'll fill in the rest once you're in.
@@ -2371,7 +2408,7 @@ export default function App() {
     <div className="min-h-screen w-full" style={{ background: PARCHMENT }}>
       {fontImports}
       {/* Header */}
-      <div style={{ background: INK_DEEP, borderBottom: `1px solid ${BRASS}`, boxShadow: `0 2px 0 ${ROYAL}` }}>
+      <div style={{ background: GLASS_DARK, backdropFilter: GLASS_BLUR, WebkitBackdropFilter: GLASS_BLUR, borderBottom: `1px solid ${GLASS_BORDER}`, boxShadow: `0 2px 0 ${ROYAL}` }}>
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <button
             onClick={() => setDashboardTab("directory")}
@@ -3165,7 +3202,7 @@ export default function App() {
       {/* Detail modal */}
       {selected && (
         <div className="fixed inset-0 flex items-center justify-center p-6 z-50" style={{ background: "rgba(16,27,45,0.6)" }} onClick={() => setSelected(null)}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl overflow-hidden" style={{ background: PARCHMENT, border: `1px solid ${BRASS}`, boxShadow: "0 25px 70px rgba(19, 42, 52, 0.45)" }}>
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl overflow-hidden" style={{ background: GLASS_LIGHT, backdropFilter: GLASS_BLUR, WebkitBackdropFilter: GLASS_BLUR, border: `1px solid ${GLASS_BORDER}`, boxShadow: "0 25px 70px rgba(19, 42, 52, 0.45)" }}>
             <div className="flex items-center justify-between px-6 py-4" style={{ background: INK_DEEP }}>
               <div className="flex items-center gap-3">
                 <Initials first={selected.firstName} last={selected.lastName} />
