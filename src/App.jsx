@@ -30,6 +30,23 @@ const GLASS_BORDER = "rgba(214, 184, 126, 0.35)"; // soft glowing brass edge
 const GLOW_BRASS = "0 0 32px rgba(214, 184, 126, 0.35), 0 0 1px rgba(214, 184, 126, 0.8)";
 const GLOW_SEAGLASS = "0 0 40px rgba(111, 170, 171, 0.35), 0 0 1px rgba(111, 170, 171, 0.8)";
 const GLASS_BLUR = "blur(20px) saturate(160%)";
+// A real oak wood-grain texture, not a flat color or a glass effect — two
+// stacked gradients: irregular thin grain lines (top layer) over a base
+// tone that shifts through several natural oak browns left to right, the
+// way real wood varies across a plank rather than sitting at one flat hue.
+const OAK_WOOD = `
+  repeating-linear-gradient(91deg,
+    rgba(38,24,12,0.32) 0px, rgba(38,24,12,0.32) 2px,
+    transparent 2px, transparent 8px,
+    rgba(140,98,58,0.22) 8px, rgba(140,98,58,0.22) 10px,
+    transparent 10px, transparent 21px,
+    rgba(20,11,4,0.28) 21px, rgba(20,11,4,0.28) 23px,
+    transparent 23px, transparent 33px,
+    rgba(160,118,72,0.18) 33px, rgba(160,118,72,0.18) 35px,
+    transparent 35px, transparent 48px
+  ),
+  linear-gradient(96deg, #3E2A17 0%, #6B4A2C 22%, #4C331D 42%, #8B6239 60%, #533A20 78%, #6B4A2C 100%)
+`;
 
 // ---------- Career taxonomy ----------
 // ---------- Supabase backend ----------
@@ -2408,7 +2425,7 @@ export default function App() {
     <div className="min-h-screen w-full" style={{ background: PARCHMENT }}>
       {fontImports}
       {/* Header */}
-      <div style={{ background: GLASS_DARK, backdropFilter: GLASS_BLUR, WebkitBackdropFilter: GLASS_BLUR, borderBottom: `1px solid ${GLASS_BORDER}`, boxShadow: `0 2px 0 ${ROYAL}` }}>
+      <div style={{ background: OAK_WOOD, borderBottom: `2px solid ${BRASS}`, boxShadow: `0 4px 16px rgba(20,11,4,0.35)` }}>
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <button
             onClick={() => setDashboardTab("directory")}
