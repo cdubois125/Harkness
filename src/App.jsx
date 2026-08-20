@@ -15,9 +15,9 @@ const PARCHMENT_DEEP = "#EDE3D0"; // soft dune sand for dividers
 const BRASS = "#AE8B54";      // unlacquered brass hardware
 const BRASS_LIGHT = "#D6B87E"; // brass catching afternoon light
 const CRIMSON = "#7A2233";    // deep bordeaux, not terracotta
-const ROYAL = "#3E7E82";      // sea glass — the boldest single change from the old corporate blue
-const ROYAL_LIGHT = "#6FAAAB"; // sea glass in shallow water
-const SLATE = "#7C7266";      // warm driftwood, not cool stone gray
+const ROYAL = "#15428F";      // Buckley Blue accent — same verified hue as the crest, brighter for active states/links, replacing the sea-glass teal that didn't belong
+const ROYAL_LIGHT = "#1E5FCD"; // Buckley Blue accent, lighter — hover states
+const SLATE = "#5A4632";      // genuine dark wood (deep walnut), replacing the lighter driftwood-taupe
 // A soft, warm-toned shadow — natural light through linen, not a cold
 // corporate drop-shadow. Used on the major surfaces throughout.
 const SOFT_SHADOW = "0 12px 40px rgba(60, 46, 24, 0.10), 0 2px 8px rgba(60, 46, 24, 0.06)";
