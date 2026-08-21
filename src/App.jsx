@@ -497,7 +497,14 @@ const SYNONYM_GROUPS = [
   ["designer", "design"],
 ];
 function expandSynonyms(word) {
-  const group = SYNONYM_GROUPS.find((g) => g.includes(word));
+  let group = SYNONYM_GROUPS.find((g) => g.includes(word));
+  // People naturally pluralize professions ("doctors," "lawyers," "engineers")
+  // — without this, only the exact singular form would ever trigger the
+  // synonym group, silently missing the most common way people actually type.
+  if (!group && word.length > 3 && word.endsWith("s")) {
+    const singular = word.slice(0, -1);
+    group = SYNONYM_GROUPS.find((g) => g.includes(singular));
+  }
   return group || [word];
 }
 // City abbreviations/nicknames people actually type — matched as a phrase
@@ -512,7 +519,15 @@ const LOCATION_PHRASES = {
   chi: "chicago",
 };
 
-const SEARCH_STOPWORDS = new Set(["the","a","an","i","im","and","or","for","to","with","in","on","at","of","is","are","need","want","looking","help","someone","who","that","can","could","would","like","about","into","from"]);
+const SEARCH_STOPWORDS = new Set([
+  "the","a","an","i","im","and","or","for","to","with","in","on","at","of","is","are",
+  "need","want","looking","help","someone","who","that","can","could","would","like","about","into","from",
+  "does","did","do","have","has","had","any","all","some","good","great","nice","best",
+  "please","get","got","give","tell","know","think","find","right","now","here","there",
+  "you","your","yours","we","us","our","they","them","their","he","she","him","her","his","hers","it","its",
+  "hi","hey","hello","thanks","thank","currently","really","just","also","very","much","many",
+  "buckley", // universally true of everyone in this directory — doesn't distinguish anyone
+]);
 function tokenize(str) {
   return (str || "")
     .toLowerCase()
@@ -592,8 +607,8 @@ function searchMembers(query, people, excludeId) {
       { text: p.field, label: "career field", weight: 2 },
       { text: p.subfield, label: "specialty", weight: 2 },
       { text: p.company, label: "affiliation", weight: 1 },
-      { text: p.city, label: "location", weight: 1 },
-      { text: p.neighborhood, label: "location", weight: 1 },
+      { text: p.city, label: "location", weight: 1, isLocationField: true },
+      { text: p.neighborhood, label: "location", weight: 1, isLocationField: true },
       { text: p.highSchool, label: "high school", weight: 1 },
       { text: p.college, label: "college", weight: 1 },
     ];
@@ -607,7 +622,12 @@ function searchMembers(query, people, excludeId) {
         const fieldTokens = tokenize(f.text);
         const fieldTextLower = (f.text || "").toLowerCase();
         const tokenHit = synonyms.some((term) => fieldTokens.some((ft) => wordsMatch(ft, term)));
-        const phraseHit = locationPhrase && fieldTextLower.includes(locationPhrase);
+        // The strong location boost only applies to someone's actual city/
+        // neighborhood fields — a bio or help-offer casually mentioning a
+        // place (e.g. "I split time between New York and London") isn't
+        // the same confident signal as their real, structured city being
+        // that place, and shouldn't be scored as if it were.
+        const phraseHit = f.isLocationField && locationPhrase && fieldTextLower.includes(locationPhrase);
         if (phraseHit) {
           score += f.weight * 8; // a confirmed city match should decisively beat a word that just happens to appear somewhere else
           matchedLabels.add(f.label);
