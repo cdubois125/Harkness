@@ -510,9 +510,34 @@ function wordsMatch(a, b) {
   const allowedTypos = minLen <= 3 ? 0 : minLen <= 6 ? 1 : 2;
   return allowedTypos > 0 && editDistance(a, b) <= allowedTypos;
 }
+// Builds a rarity score for every word that appears anywhere in the
+// directory: words that show up in almost everyone's data (like "school",
+// since nearly every high school name contains that word) get weighted
+// down toward zero, while words only a few people have (like "trinity")
+// get weighted way up. This is what makes "Trinity School" actually find
+// the Trinity School alum instead of everyone whose school name happens
+// to end in "School" too.
+function buildWordRarity(people) {
+  const visible = people.filter((p) => p.visible !== false);
+  const total = visible.length || 1;
+  const docFreq = new Map();
+  visible.forEach((p) => {
+    const allText = [p.helpOffer, p.occupation, p.field, p.subfield, p.company, p.city, p.neighborhood, p.highSchool, p.college].join(" ");
+    const uniqueTokens = new Set(tokenize(allText));
+    uniqueTokens.forEach((t) => docFreq.set(t, (docFreq.get(t) || 0) + 1));
+  });
+  const rarity = new Map();
+  docFreq.forEach((count, token) => {
+    // Smoothed inverse-document-frequency: common words → near 0, rare words → high
+    rarity.set(token, Math.log((total + 1) / (count + 1)) + 0.15);
+  });
+  return rarity;
+}
+
 function searchMembers(query, people, excludeId) {
   const queryTokens = [...new Set(tokenize(query))];
   if (queryTokens.length === 0) return [];
+  const rarity = buildWordRarity(people);
   const results = [];
   people.forEach((p) => {
     if (p.visible === false) return;
@@ -536,7 +561,7 @@ function searchMembers(query, people, excludeId) {
         const fieldTokens = tokenize(f.text);
         const hit = fieldTokens.some((ft) => wordsMatch(ft, qt));
         if (hit) {
-          score += f.weight;
+          score += f.weight * (rarity.get(qt) || 1);
           matchedLabels.add(f.label);
           matchedWords.add(qt);
         }
@@ -544,7 +569,14 @@ function searchMembers(query, people, excludeId) {
     });
     if (score > 0) results.push({ person: p, score, matchedLabels: [...matchedLabels], matchedWords: [...matchedWords] });
   });
-  return results.sort((a, b) => b.score - a.score).slice(0, 8);
+  results.sort((a, b) => b.score - a.score);
+  if (results.length === 0) return [];
+  // Keep genuinely relevant matches, drop coincidental ones — a match
+  // scoring far below the best result is more likely a stray common-word
+  // hit than an actually helpful suggestion.
+  const topScore = results[0].score;
+  const relevant = results.filter((r) => r.score >= Math.max(topScore * 0.4, 1.2));
+  return relevant.slice(0, 8);
 }
 
 // A handful of other popular platforms, offered via a dropdown so the
@@ -1135,6 +1167,41 @@ function Globe3D({ cityPoints, maxCount, selectedCity, onSelectCity }) {
       stateRef.current.focusTarget = null;
       zoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoom + e.deltaY * 0.005));
     }
+    // Pinch-to-zoom on touch devices. This needs raw Touch events, not the
+    // Pointer events used for drag above — pointer events only reliably
+    // track one touch at a time, but pinch needs both simultaneously to
+    // measure the distance between them.
+    let pinchStartDistance = null;
+    let pinchStartZoom = null;
+    function touchDistance(touches) {
+      const dx = touches[0].clientX - touches[1].clientX;
+      const dy = touches[0].clientY - touches[1].clientY;
+      return Math.hypot(dx, dy);
+    }
+    function onTouchStart(e) {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        pinchStartDistance = touchDistance(e.touches);
+        pinchStartZoom = zoom;
+        stateRef.current.focusTarget = null;
+        isDragging = false; // don't let a single-finger drag also be mid-flight
+      }
+    }
+    function onTouchMove(e) {
+      if (e.touches.length === 2 && pinchStartDistance) {
+        e.preventDefault();
+        // Fingers spreading apart (distance growing) zooms in, matching
+        // the standard pinch-to-zoom convention everyone already knows.
+        const ratio = touchDistance(e.touches) / pinchStartDistance;
+        zoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, pinchStartZoom / ratio));
+      }
+    }
+    function onTouchEnd(e) {
+      if (e.touches.length < 2) {
+        pinchStartDistance = null;
+        pinchStartZoom = null;
+      }
+    }
     // Hover: shows the city name and swaps the cursor to a plain arrow when
     // directly over a pin, independent of drag/click handling above.
     function onHoverMove(e) {
@@ -1164,6 +1231,10 @@ function Globe3D({ cityPoints, maxCount, selectedCity, onSelectCity }) {
     window.addEventListener("pointermove", onPointerMove);
     window.addEventListener("pointerup", onPointerUp);
     dom.addEventListener("wheel", onWheel, { passive: false });
+    dom.addEventListener("touchstart", onTouchStart, { passive: false });
+    dom.addEventListener("touchmove", onTouchMove, { passive: false });
+    dom.addEventListener("touchend", onTouchEnd);
+    dom.addEventListener("touchcancel", onTouchEnd);
     dom.addEventListener("mousemove", onHoverMove);
     dom.addEventListener("mouseleave", onHoverLeave);
 
@@ -1250,6 +1321,10 @@ function Globe3D({ cityPoints, maxCount, selectedCity, onSelectCity }) {
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", onPointerUp);
       dom.removeEventListener("wheel", onWheel);
+      dom.removeEventListener("touchstart", onTouchStart);
+      dom.removeEventListener("touchmove", onTouchMove);
+      dom.removeEventListener("touchend", onTouchEnd);
+      dom.removeEventListener("touchcancel", onTouchEnd);
       dom.removeEventListener("mousemove", onHoverMove);
       dom.removeEventListener("mouseleave", onHoverLeave);
       window.removeEventListener("resize", handleResize);
