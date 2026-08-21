@@ -2630,7 +2630,7 @@ export default function App() {
       <div className="max-w-6xl mx-auto px-6 py-8">
         {/* Welcome */}
         <div className="mb-6">
-          <div style={{ fontFamily: "Cormorant Garamond, serif", fontSize: 28, color: INK }}>Welcome, {currentUser?.firstName}.</div>
+          <div style={{ fontFamily: "Cormorant Garamond, serif", fontSize: 28, fontWeight: "bold", color: INK }}>Welcome, {currentUser?.firstName}.</div>
           <div style={{ fontFamily: "Source Serif 4, serif", fontSize: 14, color: SLATE }}>
             Your record is in the directory below. Head to <button onClick={openProfile} style={{ color: ROYAL, textDecoration: "underline" }}>My Profile</button> to add details others can see.
           </div>
