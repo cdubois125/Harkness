@@ -4,7 +4,7 @@ import { Search, LogIn, UserPlus, GraduationCap, Users, MapPin, Briefcase, X, Ch
 
 // ---------- Design tokens ----------
 // ---------- Design tokens ----------
-// A Hamptons waterfront material palette: sun-bleached linen, deep harbor
+// A waterfront material palette: sun-bleached linen, deep harbor
 // water at dusk, unlacquered brass hardware, sea glass, driftwood, and
 // bordeaux. Every name below is used identically everywhere in the app —
 // only the values changed, so this one block reskins the whole site.
