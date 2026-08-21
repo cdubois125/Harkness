@@ -473,13 +473,52 @@ function otherSocialUrl(platform, value) {
 // against a query locally, in the browser, using their "how I can help"
 // text plus career/location/education fields — genuinely useful matching,
 // just pattern-based rather than a live model reasoning about it.
+// Groups of words that should all be treated as interchangeable when
+// matching — this is what gives the search actual common sense instead of
+// pure literal-word matching. Searching "doctor" now finds a "surgeon" or
+// "physician"; searching "lawyer" finds "attorney" or "counsel". Kept
+// deliberately non-overlapping (e.g. "developer" only lives in the tech
+// group, not real estate) so groups don't bleed into unrelated matches.
+const SYNONYM_GROUPS = [
+  ["doctor", "physician", "surgeon", "cardiologist", "pediatrician", "oncologist", "psychiatrist", "dentist", "medicine", "medical", "healthcare"],
+  ["lawyer", "attorney", "counsel", "litigator", "esquire", "law", "legal"],
+  ["banker", "banking", "finance", "financial", "investment", "investor", "equity", "capital"],
+  ["engineer", "engineering", "developer", "programmer", "coder", "coding", "tech", "technology", "software"],
+  ["startup", "entrepreneur", "founder"],
+  ["realtor", "property", "housing"],
+  ["teacher", "professor", "educator", "academic", "academia"],
+  ["diplomat", "foreign", "policy"],
+  ["journalist", "reporter", "writer", "author"],
+  ["consultant", "consulting", "advisor", "advisory"],
+  ["chef", "culinary", "cooking", "restaurant"],
+  ["architect", "architecture"],
+  ["nonprofit", "charity", "foundation"],
+  ["filmmaker", "director", "producer", "film", "movie", "entertainment"],
+  ["designer", "design"],
+];
+function expandSynonyms(word) {
+  const group = SYNONYM_GROUPS.find((g) => g.includes(word));
+  return group || [word];
+}
+// City abbreviations/nicknames people actually type — matched as a phrase
+// against the raw field text, not word-by-word, since "New York" is two
+// words and neither alone should count as a match for "NYC."
+const LOCATION_PHRASES = {
+  nyc: "new york", ny: "new york",
+  la: "los angeles",
+  sf: "san francisco", bayarea: "san francisco",
+  dc: "washington",
+  philly: "philadelphia",
+  chi: "chicago",
+};
+
 const SEARCH_STOPWORDS = new Set(["the","a","an","i","im","and","or","for","to","with","in","on","at","of","is","are","need","want","looking","help","someone","who","that","can","could","would","like","about","into","from"]);
 function tokenize(str) {
   return (str || "")
     .toLowerCase()
     .replace(/[^a-z0-9\s]/g, " ")
     .split(/\s+/)
-    .filter((w) => w.length > 2 && !SEARCH_STOPWORDS.has(w));
+    .filter((w) => (w.length > 2 || Object.prototype.hasOwnProperty.call(LOCATION_PHRASES, w)) && !SEARCH_STOPWORDS.has(w));
 }
 // Edit distance between two words, counting an adjacent-letter swap (the
 // single most common typo — "Grotno" for "Groton") as one edit rather than
@@ -505,8 +544,12 @@ function editDistance(a, b) {
 // require an exact/substring match — fuzzy-matching very short words
 // produces too many false positives ("law" vs "raw") to be worth it.
 function wordsMatch(a, b) {
-  if (a === b || a.includes(b) || b.includes(a)) return true;
+  if (a === b) return true;
   const minLen = Math.min(a.length, b.length);
+  // Substring containment only counts once the shorter word is at least 4
+  // letters — otherwise short, common words ("any") false-match purely by
+  // coincidence against unrelated longer words that contain them ("anyone").
+  if (minLen >= 4 && (a.includes(b) || b.includes(a))) return true;
   const allowedTypos = minLen <= 3 ? 0 : minLen <= 6 ? 1 : 2;
   return allowedTypos > 0 && editDistance(a, b) <= allowedTypos;
 }
@@ -522,7 +565,7 @@ function buildWordRarity(people) {
   const total = visible.length || 1;
   const docFreq = new Map();
   visible.forEach((p) => {
-    const allText = [p.helpOffer, p.occupation, p.field, p.subfield, p.company, p.city, p.neighborhood, p.highSchool, p.college].join(" ");
+    const allText = [p.bio, p.helpOffer, p.occupation, p.field, p.subfield, p.company, p.city, p.neighborhood, p.highSchool, p.college].join(" ");
     const uniqueTokens = new Set(tokenize(allText));
     uniqueTokens.forEach((t) => docFreq.set(t, (docFreq.get(t) || 0) + 1));
   });
@@ -543,6 +586,7 @@ function searchMembers(query, people, excludeId) {
     if (p.visible === false) return;
     if (excludeId && p.id === excludeId) return;
     const fields = [
+      { text: p.bio, label: "bio", weight: 3 },
       { text: p.helpOffer, label: "how they can help", weight: 4 },
       { text: p.occupation, label: "occupation", weight: 2 },
       { text: p.field, label: "career field", weight: 2 },
@@ -557,10 +601,18 @@ function searchMembers(query, people, excludeId) {
     const matchedLabels = new Set();
     const matchedWords = new Set();
     queryTokens.forEach((qt) => {
+      const synonyms = expandSynonyms(qt);
+      const locationPhrase = LOCATION_PHRASES[qt];
       fields.forEach((f) => {
         const fieldTokens = tokenize(f.text);
-        const hit = fieldTokens.some((ft) => wordsMatch(ft, qt));
-        if (hit) {
+        const fieldTextLower = (f.text || "").toLowerCase();
+        const tokenHit = synonyms.some((term) => fieldTokens.some((ft) => wordsMatch(ft, term)));
+        const phraseHit = locationPhrase && fieldTextLower.includes(locationPhrase);
+        if (phraseHit) {
+          score += f.weight * 8; // a confirmed city match should decisively beat a word that just happens to appear somewhere else
+          matchedLabels.add(f.label);
+          matchedWords.add(qt);
+        } else if (tokenHit) {
           score += f.weight * (rarity.get(qt) || 1);
           matchedLabels.add(f.label);
           matchedWords.add(qt);
@@ -1159,6 +1211,7 @@ function Globe3D({ cityPoints, maxCount, selectedCity, onSelectCity }) {
         raycaster.setFromCamera(pointer, camera);
         const hits = raycaster.intersectObjects(pinMeshes);
         if (hits.length) onSelectCity(hits[0].object.userData.city);
+        else onSelectCity(null); // clicked open globe/ocean — deselect rather than do nothing
       }
       isDragging = false;
     }
@@ -1285,11 +1338,18 @@ function Globe3D({ cityPoints, maxCount, selectedCity, onSelectCity }) {
       camera.lookAt(0, 0, 0);
 
       let activeMesh = null;
+      // Pins scale with zoom instead of staying a fixed world size — as you
+      // zoom in, perspective alone would normally make them look bigger and
+      // bigger; this counteracts that so a close-up pin never balloons up
+      // and covers its neighbors. Selection/hover is shown via a brighter
+      // glow instead of a size change, for the same reason.
+      const zoomPinScale = Math.max(0.45, Math.min(1.7, zoom / 6.5));
       pinMeshes.forEach((m) => {
         const isHovered = m.userData.city === stateRef.current.hoveredCity;
         const isSel = m.userData.city === stateRef.current.selectedCity;
-        const targetScale = isHovered || isSel ? 1.6 : 1;
-        m.scale.setScalar(m.scale.x + (targetScale - m.scale.x) * 0.15);
+        m.scale.setScalar(m.scale.x + (zoomPinScale - m.scale.x) * 0.15);
+        const targetGlow = isHovered || isSel ? 0.9 : 0.4;
+        m.material.emissiveIntensity += (targetGlow - m.material.emissiveIntensity) * 0.15;
         if (isHovered) activeMesh = m;
       });
       if (!activeMesh) {
@@ -2327,6 +2387,18 @@ export default function App() {
             </div>
             <div>
               <label className="flex items-center gap-1.5 mb-1.5" style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 10, letterSpacing: "0.1em", color: SLATE }}>
+                SHORT BIO
+              </label>
+              <textarea
+                value={profileForm.bio || ""}
+                onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })}
+                rows={3}
+                placeholder="A bit about yourself — your path since Buckley, interests, family, whatever you'd want a fellow alum to know. Optimus.AI reads this too, so the more you share, the better it can match you."
+                style={{ ...fldStyle, resize: "none" }}
+              />
+            </div>
+            <div>
+              <label className="flex items-center gap-1.5 mb-1.5" style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 10, letterSpacing: "0.1em", color: SLATE }}>
                 <HeartHandshake size={13} /> HOW YOU WISH TO HELP OTHER ALUMS / PARENTS
               </label>
               <textarea
@@ -3294,6 +3366,16 @@ export default function App() {
               <button onClick={() => setSelected(null)}><X size={18} color={BRASS_LIGHT} /></button>
             </div>
             <div className="p-6 space-y-3">
+              {selected.bio && (
+                <div className="pb-3 mb-1" style={{ borderBottom: `1px solid ${PARCHMENT_DEEP}` }}>
+                  <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 10, letterSpacing: "0.08em", color: SLATE, marginBottom: 4 }}>
+                    ABOUT {selected.firstName?.toUpperCase()}
+                  </div>
+                  <div style={{ fontFamily: "Source Serif 4, serif", fontSize: 13, color: INK }}>
+                    {selected.bio}
+                  </div>
+                </div>
+              )}
               {selected.helpOffer && (
                 <div className="pb-3 mb-1" style={{ borderBottom: `1px solid ${PARCHMENT_DEEP}` }}>
                   <div style={{ fontFamily: "IBM Plex Mono, monospace", fontSize: 10, letterSpacing: "0.08em", color: SLATE, marginBottom: 4 }}>
